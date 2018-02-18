@@ -3,6 +3,8 @@ import win32con
 import win32gui
 import time
 import random
+import matplotlib.pyplot as plt
+import numpy as np
 
 def RGB2Int(red, green, blue):
 	return red + green * 256 + blue * 256 * 256
@@ -36,6 +38,29 @@ def click(hWnd, action):
 	win32gui.SendMessage(hWnd, win32con.WM_LBUTTONDOWN, 0, lParam)
 	win32gui.SendMessage(hWnd, win32con.WM_LBUTTONUP, 0, lParam)
 	time.sleep(delay_time)
+
+def display_room_rect(left_top_x, left_top_y, right_bot_x, right_bot_y):
+	hWnd = win32gui.FindWindow(None, "QQ游戏 - 连连看角色版")	
+	win32gui.SetForegroundWindow(hWnd)
+	win32gui.SetActiveWindow(hWnd)
+	hDC = win32gui.GetWindowDC(hWnd)
+
+	rect = win32gui.GetWindowRect(hWnd)
+	x = rect[0]
+	y = rect[1]
+	w = rect[2] - x
+	h = rect[3] - y
+	print("Window name: " + win32gui.GetWindowText(hWnd))
+	print("Window hDC: " + str(hDC))
+	print("x, y, w, h == " + str(x) + " " + str(y) + " " + str(w) + " " + str(h) + " ")
+	image = np.zeros((right_bot_y - left_top_y + 1, right_bot_x - left_top_x + 1, 3))
+	for y in range(right_bot_y - left_top_y + 1): #h
+		for x in range(right_bot_x - left_top_x + 1): #w
+			image[y,x] = np.asarray(Int2RGB(win32gui.GetPixel(hDC, x + left_top_x, y + left_top_y))) / 255
+	# print(image)
+	win32gui.ReleaseDC(hWnd, hDC)
+	plt.imshow(image[..., ::-1]) # GetPixel得到的是BGR而不是RGB，所以需要转换一下
+	plt.show()	
 
 def debug():
 	print("In debug util.py")
