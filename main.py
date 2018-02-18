@@ -1,7 +1,9 @@
 import win32gui
+import win32api
 import time
 from util import RGB2Int
 from util import Int2RGB
+from util import click
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -35,16 +37,13 @@ def get_room_hWnd():
 	return hWnd
 
 
-def displayScreen():
+def display_room_rect(left_top_x, left_top_y, right_bot_x, right_bot_y):
+# def displayRect(hWnd):
 	# hDC = win32gui.GetDC(hWnd)
 	# hWnd = get_lobby_hWnd()
 	# hWnd = win32gui.FindWindow(None, "连连看")
 	# hWnd = win32gui.GetDesktopWindow()
-	# user32 = windll.user32
-	# user32.SetProcessDPIAware()
-	hWnd = win32gui.FindWindow(None, "QQ游戏 - 连连看角色版")
-	
-	print(hWnd)
+	hWnd = win32gui.FindWindow(None, "QQ游戏 - 连连看角色版")	
 	win32gui.SetForegroundWindow(hWnd)
 	win32gui.SetActiveWindow(hWnd)
 	hDC = win32gui.GetWindowDC(hWnd)
@@ -57,30 +56,55 @@ def displayScreen():
 	print("Window name: " + win32gui.GetWindowText(hWnd))
 	print("Window hDC: " + str(hDC))
 	print("x, y, w, h == " + str(x) + " " + str(y) + " " + str(w) + " " + str(h) + " ")
-	image = np.zeros((h+4,w+4,3))
-	for y in range(h-6):
-		for x in range(w-6):
-			if y % 20 != 0:
-				break
-			if x == 0:
-				print(x, y)
-			# time.sleep(1)
+	image = np.zeros((right_bot_y - left_top_y + 1, right_bot_x - left_top_x + 1, 3))
+	for y in range(right_bot_y - left_top_y + 1): #h
+		for x in range(right_bot_x - left_top_x + 1): #w
 			# print(Int2RGB(win32gui.GetPixel(hDC, x+3, y+3)))
-			image[y + 3,x + 3] = np.asarray(Int2RGB(win32gui.GetPixel(hDC, x+3, y+3)))
-	# print(Int2RGB(win32gui.GetPixel(hDC, 500, 500)))
-	# print(Int2RGB(win32gui.GetPixel(hDC, 11, 11)))
-	# print(win32gui.GetPixel(hDC, 10, 10))
+			image[y,x] = np.asarray(Int2RGB(win32gui.GetPixel(hDC, x + left_top_x, y + left_top_y))) / 255
+			# print(image[y,x])
 	win32gui.ReleaseDC(hWnd, hDC)
-	plt.imshow(image)
+	plt.imshow(image[..., ::-1]) # 似乎GetPixel得到的是BGR而不是RGB，所以需要转换一下
 	plt.show()	
 
+def enter_room_from_lobby():
+	# 由于未知原因，对游戏大厅窗口调用 win32gui.GetPixel 会得到错误
+	# 经过考量，觉得游戏大厅可以全屏而固定位置，且只需要模拟一个“快速加入游戏”
+	# 的按钮即可，故直接编码模拟点击按钮所在x，y坐标
+	# 注意需要保证游戏大厅最大化，且屏幕大小更换后此函数无法正常工作
+	hWnd = win32gui.FindWindow(None, "连连看")
+	win32gui.SetForegroundWindow(hWnd)
+	win32gui.SetActiveWindow(hWnd)	
+	click(hWnd, "enterRoom")
+	hWnd = win32gui.FindWindow(None, "QQ游戏 - 连连看角色版")
+	if hWnd == 0:
+		print("进入游戏房间失败，推出程序")
+		exit()
+
+
+# def list_windows():
+# 	'''Return a sorted list of visible windows.'''
+# 	result = []
+# 	@WNDENUMPROC
+# 	def enum_proc(hWnd, lParam):
+# 		if user32.IsWindowVisible(hWnd):
+# 			pid = wintypes.DWORD()
+# 			tid = user32.GetWindowThreadProcessId(
+# 						hWnd, ctypes.byref(pid))
+# 			length = user32.GetWindowTextLengthW(hWnd) + 1
+# 			title = ctypes.create_unicode_buffer(length)
+# 			user32.GetWindowTextW(hWnd, title, length)
+# 			result.append(WindowInfo(pid.value, title.value))
+# 		return True
+# 	user32.EnumWindows(enum_proc, 0)
+# 	return sorted(result)
 
 def debug():
 	print("In debug")
-	# hWnd = get_lobby_hWnd()
-	displayScreen()
-	# print(get_room_hWnd())
+	# display_room_rect(3,3,100,30)
+	enter_room_from_lobby()
+	# hWnd = win32gui.FindWindow(None, "连连看")
 
+	
 def main():
 	print("In main")
 
