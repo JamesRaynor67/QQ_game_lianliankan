@@ -5,13 +5,14 @@ import time
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-
+from util import GameState
+from util import get_status
 from util import RGB2Int
 from util import click
 
 DEBUG = True
 BACK_COLOR = RGB2Int(0x30,0x4C,0x70)
-GAME_SPEED = 0.01
+GAME_SPEED = 0.1
 GAME_SPEED_VAR = 0
 
 def scan_game_board():
@@ -103,8 +104,9 @@ def if_all_zeros(board):
 	return True
 
 def solve_game_by_brute_force():
-	print("In debug sovle.py")
 	while True:
+		if get_status() != GameState.GS_INGAME:
+			break
 		board = scan_game_board()
 		solve_at_least_one_pair(board)
 		time.sleep(8)
@@ -116,6 +118,7 @@ def solve_game_by_brute_force():
 		if board == new_board:
 			print("无解，需要进行重排")
 			resort()
+
 
 def debug():
 	solve_game_by_brute_force()

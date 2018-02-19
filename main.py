@@ -8,30 +8,19 @@ from util import display_room_rect
 from util import enter_room_from_lobby
 from util import click_start
 from util import exit_room
+from util import get_lobby_hWnd
+from util import get_status
+from util import GameState
 from solve import solve_game_by_brute_force
-from enum import Enum
-
-class GameState(Enum):
-	GS_INGAME = 1 #处在游戏中
-	GS_OVER = 2 #游戏超时，等待其他玩家完成消除并结束一场游戏
-	GS_INROOM = 3 #在房间里等待游戏开始
-	GS_CLOSED = 4 #游戏窗口被关闭（主动关闭或者被踢出房间
-	GS_MINIMIZED = 5 #游戏窗口被最小化（无法获取颜色值）
-	GS_INLOBBY = 6 # 在游戏大厅中
-	GS_UNKNOWN = 7 #未定义状态(这是错误)
-
 
 def debug():
 	print("In debug")
-	# display_room_rect(3,3,100,30)
-	enter_room_from_lobby()
-	# hWnd = win32gui.FindWindow(None, "连连看")
+	print(get_status())
+	exit_room()
 
-def get_status():
-	pass
-	return 0
 
-if __name__ == '__main__':
+
+def main():
 	# 这个状态机实际上不健壮，万一出现强制前置弹窗等意外状态，程序即陷入错误
 	status = GameState.GS_INLOBBY
 	waitting_time = 0
@@ -40,19 +29,24 @@ if __name__ == '__main__':
 			enter_room_from_lobby()
 		elif status == GameState.GS_INROOM:
 			if waitting_time == 0:
-				click_start()				
-			elif waitting_time < 20:
+				click_start()
+				waitting_time = 1
+			elif waitting_time < 30:
 				time.sleep(1)
 				waitting_time += 1
 				print("等待{}秒...".format(waitting_time))
 			else:
 				exit_room()
 		elif status == GameState.GS_INGAME:
+			print("准备开始游戏")
+			time.sleep(2) # 一开始方块没有出现，等待两秒			
 			solve_game_by_brute_force()
+			time.sleep(6)
 			exit_room()
 
 		pre_status = status
 		status = get_status()
+		print("现在状态：{}".format(status))
 		# 退出room内等待状态后清零计时
 		if pre_status == GameState.GS_INROOM and status != GameState.GS_INROOM:
 			waitting_time = 0
@@ -60,7 +54,7 @@ if __name__ == '__main__':
 		if status == GameState.GS_UNKNOWN:
 			hWnd = win32gui.FindWindow(None, "QQ游戏 - 连连看角色版")
 			if hWnd == 0:
-				hWnd = win32gui.FindWindow(None, "连连看")
+				hWnd = get_lobby_hWnd()
 				assert hWnd != 0
 				win32gui.SetForegroundWindow(hWnd)
 				win32gui.SetActiveWindow(hWnd)
@@ -70,3 +64,6 @@ if __name__ == '__main__':
 				win32gui.SetForegroundWindow(hWnd)
 				win32gui.SetActiveWindow(hWnd)
 				status = GameState.GS_INROOM
+
+if __name__ == '__main__':
+	main()
