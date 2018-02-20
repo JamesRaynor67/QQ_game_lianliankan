@@ -12,6 +12,7 @@ from util import get_lobby_hWnd
 from util import get_status
 from util import GameState
 from solve import solve_game_by_brute_force
+from solve import solve_game_with_grace
 
 def debug():
 	print("In debug")
@@ -21,7 +22,7 @@ def debug():
 
 
 def main():
-	# 这个状态机实际上不健壮，万一出现强制前置弹窗等意外状态，程序即陷入错误
+	# 这个状态机实际上不健壮，万一出现进入房间超时等意外状态，程序即陷入错误
 	status = GameState.GS_INLOBBY
 	waitting_time = 0
 	while True:
@@ -31,7 +32,7 @@ def main():
 			if waitting_time == 0:
 				click_start()
 				waitting_time = 1
-			elif waitting_time < 30:
+			elif waitting_time < 20:
 				time.sleep(1)
 				waitting_time += 1
 				print("等待{}秒...".format(waitting_time))
@@ -40,8 +41,9 @@ def main():
 		elif status == GameState.GS_INGAME:
 			print("准备开始游戏")
 			time.sleep(2) # 一开始方块没有出现，等待两秒			
-			solve_game_by_brute_force()
-			time.sleep(6)
+			# solve_game_by_brute_force()
+			solve_game_with_grace()
+			time.sleep(2)
 			exit_room()
 
 		pre_status = status
